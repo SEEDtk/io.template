@@ -1,7 +1,7 @@
 /**
  *
  */
-package io.template;
+package org.theseed.io.template;
 
 import java.io.File;
 import java.io.FileNotFoundException;
