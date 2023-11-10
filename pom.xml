@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>org.theseed</groupId>
-            <artifactId>shared</artifactId>
+            <artifactId>basic</artifactId>
             <version>1.0.0</version>
         </dependency>
         <dependency>

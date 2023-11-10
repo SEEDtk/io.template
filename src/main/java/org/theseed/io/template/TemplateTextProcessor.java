@@ -16,13 +16,13 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseProcessor;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.io.FieldInputStream;
 import org.theseed.io.LineReader;
 import org.theseed.io.template.output.ITemplateWriter;
 import org.theseed.io.template.output.TemplateHashWriter;
 import org.theseed.io.template.output.TemplatePrintWriter;
-import org.theseed.utils.BaseProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This sub-command converts incoming files to text paragraphs using a LineTemplate.
