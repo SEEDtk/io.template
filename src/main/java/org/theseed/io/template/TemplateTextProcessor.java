@@ -105,6 +105,8 @@ public class TemplateTextProcessor extends BaseProcessor {
     private File globalTemplateFile;
     /** global template output */
     private TemplateHashWriter globals;
+    /** output word counter */
+    private long wordCount;
 
     // COMMAND-LINE OPTIONS
 
@@ -191,10 +193,11 @@ public class TemplateTextProcessor extends BaseProcessor {
             FileUtils.cleanDirectory(this.outDir);
         } else
             log.info("Output will be to directory {}.", this.outDir);
-        // Initialize the linking structures.
+        // Initialize the linking structures and the word counter.
         this.linkedTemplates = new ArrayList<LinkedTemplateDescriptor>();
         this.linkedFiles = new ArrayList<File>();
         this.template = null;
+        this.wordCount = 0;
         return true;
     }
 
@@ -228,9 +231,12 @@ public class TemplateTextProcessor extends BaseProcessor {
                 writer = new TemplatePrintWriter(currOutFile);
                 log.info("Processing data from directory #{} {} into text file {}.", dirCount, baseDir, currOutFile);
             }
-            if (! skipFile)
+            if (! skipFile) {
                 this.executeTemplates(this.templateFile, writer);
+                this.wordCount += writer.getWordCount();
+            }
         }
+        log.info("All templates processed.  {} words generated ({} estimated tokens).", this.wordCount, this.wordCount * 2.2);
     }
 
     /**
