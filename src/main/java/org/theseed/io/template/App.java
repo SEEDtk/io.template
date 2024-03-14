@@ -8,14 +8,9 @@ import java.util.Arrays;
 import org.theseed.basic.BaseProcessor;
 
 /**
- * Commands for utilities relating to binning.
+ * Commands for generating texts from templates and field input streams.
  *
- * build		build the protein finder FASTA files
- * copy			create a new protein finder that is a subset of a bigger one
- * bin			process a FASTA file to create bins
- * clean		remove ambiguous sequences from a finder's FASTA files
- * sourFile		create a subset of a role definition file with a specified set of roles
- * checkv_db	update the checkv database to include taxon IDs
+ * text			generate a text template from one or more directories of data
  *
  */
 public class App {
