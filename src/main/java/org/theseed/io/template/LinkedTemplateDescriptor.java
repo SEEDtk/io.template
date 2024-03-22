@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.io.FieldInputStream;
 import org.theseed.io.template.output.TemplateHashWriter;
-import org.theseed.magic.FidMapper;
 
 /**
  * This object is used to manage a linked template.  It contains the index of the key column in the main
@@ -53,13 +52,12 @@ public class LinkedTemplateDescriptor {
      * @param templateLines		list of template file lines
      * @param linkedFile		name of linked file
      * @param globals 			global-data structure
-     * @param fidMap			feature ID mapper to use
      *
      * @throws IOException
      * @throws ParseFailureException
      */
     public LinkedTemplateDescriptor(String mainKey, String linkKey, List<String> templateLines, File linkedFile,
-            TemplateHashWriter globals, FidMapper fidMap) throws IOException, ParseFailureException {
+            TemplateHashWriter globals) throws IOException, ParseFailureException {
         log.info("Building template based on join from {} to {}.", mainKey, linkKey);
         this.mainFileKey = mainKey;
         String templateString = buildTemplate(templateLines);
@@ -75,7 +73,7 @@ public class LinkedTemplateDescriptor {
             // Find the key column.
             int keyIdx = linkStream.findField(linkKey);
             // Construct the template.
-            LineTemplate template = new LineTemplate(linkStream, templateString, globals, fidMap);
+            LineTemplate template = new LineTemplate(linkStream, templateString, globals);
             // Loop through the link file.
             for (var line : linkStream) {
                 String key = line.get(keyIdx);

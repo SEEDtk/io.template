@@ -23,7 +23,6 @@ import org.theseed.io.LineReader;
 import org.theseed.io.template.output.ITemplateWriter;
 import org.theseed.io.template.output.TemplateHashWriter;
 import org.theseed.io.template.output.TemplatePrintWriter;
-import org.theseed.magic.FidMapper;
 
 /**
  * This sub-command converts incoming files to text paragraphs using a LineTemplate.
@@ -108,8 +107,6 @@ public class TemplateTextProcessor extends BaseProcessor {
     private TemplateHashWriter globals;
     /** output word counter */
     private long wordCount;
-    /** feature ID mapper */
-    private FidMapper fidMapper;
 
     // COMMAND-LINE OPTIONS
 
@@ -201,7 +198,6 @@ public class TemplateTextProcessor extends BaseProcessor {
         this.linkedFiles = new ArrayList<File>();
         this.template = null;
         this.wordCount = 0;
-        this.fidMapper = new FidMapper();
         return true;
     }
 
@@ -448,7 +444,7 @@ public class TemplateTextProcessor extends BaseProcessor {
         String templateString = LinkedTemplateDescriptor.buildTemplate(templateLines);
         // Compile the string.
         log.info("Compiling main template from {} lines.", templateLines.size());
-        this.template = new LineTemplate(mainStream, templateString, this.globals, this.fidMapper);
+        this.template = new LineTemplate(mainStream, templateString, this.globals);
         // Denote there are no linked templates yet.
         this.linkedTemplates.clear();
     }
@@ -492,8 +488,7 @@ public class TemplateTextProcessor extends BaseProcessor {
             break;
         }
         // Create the template and add it to the queue.
-        var template = new LinkedTemplateDescriptor(mainKey, linkKey, templateLines, linkFile, this.globals,
-                this.fidMapper);
+        var template = new LinkedTemplateDescriptor(mainKey, linkKey, templateLines, linkFile, this.globals);
         this.linkedTemplates.add(template);
     }
 
