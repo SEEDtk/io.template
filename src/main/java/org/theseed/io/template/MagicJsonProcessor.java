@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.kohsuke.args4j.Argument;
@@ -102,6 +103,7 @@ public class MagicJsonProcessor extends BaseProcessor {
 
     @Override
     protected void setDefaults() {
+        this.otherDirs = new ArrayList<File>();
     }
 
     @Override

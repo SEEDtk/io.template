@@ -4,20 +4,21 @@
 package org.theseed.json;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.magic.FidMapper;
 
 import com.github.cliftonlabs.json_simple.JsonArray;
+import com.github.cliftonlabs.json_simple.JsonException;
 import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsoner;
 
@@ -44,11 +45,9 @@ public abstract class JsonConverter {
     /** number of new fields added */
     private int newFieldCount;
     /** match pattern for genome IDs */
-    public static final Pattern GENOME_ID_PATTERN = Pattern.compile("\"genome_id(_[a-zA-Z0-9])?\"");
+    public static final Pattern GENOME_ID_PATTERN = Pattern.compile("genome_id(_[a-zA-Z0-9])?");
     /** match pattern for feature IDs */
-    public static final Pattern FEATURE_ID_PATTERN = Pattern.compile("\"(patric|feature)_id(_[a-zA-Z0-9])?\"");
-    /** empty json array */
-    private static final JsonArray EMPTY_ARRAY = new JsonArray();
+    public static final Pattern FEATURE_ID_PATTERN = Pattern.compile("(patric_id|interactor)(_[a-zA-Z0-9])?");
 
     /**
      * Construct a JSON converter for a specified file.
@@ -58,16 +57,18 @@ public abstract class JsonConverter {
      * @param fileName		base name of the file
      *
      * @throws IOException
+     * @throws JsonException
      */
-    public JsonConverter(FidMapper fidMap, File dir, String fileName) throws IOException {
+    public JsonConverter(FidMapper fidMap, File dir, String fileName) throws IOException, JsonException {
         // Save the feature ID mapper.
         this.fidMapper = fidMap;
         // Compute the file name.
         this.jsonFile = new File(dir, fileName);
         // Load the file into memory.
-        String jsonString = FileUtils.readFileToString(this.jsonFile, Charset.defaultCharset());
-        // Convert it to a Json array.
-        this.jsonList = Jsoner.deserialize(jsonString, EMPTY_ARRAY);
+        log.info("Reading file {}.", fileName);
+        try (FileReader reader = new FileReader(this.jsonFile)) {
+            this.jsonList = (JsonArray) Jsoner.deserialize(reader);
+        }
         log.info("Processing {} file {} with {} records.", dir, fileName, this.jsonList.size());
         // Denote there have been no modifications.
         this.newFieldCount = 0;
@@ -91,22 +92,44 @@ public abstract class JsonConverter {
         int fNotFoundCount = 0;
         // Loop through the records.
         for (Object entry : this.jsonList) {
+            recordCount++;
             JsonObject record = (JsonObject) entry;
             this.preProcessRecord(record);
             // Now process each field, accumulating new ones.
-            Map<String, String> newFields = new TreeMap<String, String>();
+            Map<String, Object> newFields = new TreeMap<String, Object>();
             for (var fieldEntry : record.entrySet()) {
                 String key = fieldEntry.getKey();
                 Matcher m = GENOME_ID_PATTERN.matcher(key);
                 if (m.matches()) {
-                    String oldId = fieldEntry.getValue().toString();
-                    String newId = this.getFidMapper().getMagicGenomeId(oldId);
-                    if (newId == null) {
-                        // Here we don't have an ID for this genome.  Count it as an error.
-                        gNotFoundCount++;
+                    Object value = fieldEntry.getValue();
+                    // Here we must check for the special case that the value is an array.
+                    if (value instanceof JsonArray) {
+                        // We will build a new array of genome word IDs, but if any of the genome IDs
+                        // are missing, we skip the whole process.
+                        JsonArray newValues = new JsonArray();
+                        boolean ok = true;
+                        Iterator<Object> iter = ((JsonArray) value).iterator();
+                        while (iter.hasNext() && ok) {
+                            String oldId = iter.next().toString();
+                            String newId = this.getFidMapper().getMagicGenomeId(oldId);
+                            if (newId == null)
+                                ok = false;
+                            else
+                                newValues.add(newId);
+                        }
+                        if (ok) {
+                            this.putNewId(newFields, newValues, "genome_word", m.group(1));
+                        }
                     } else {
-                        this.putNewId(newFields, newId, "genome_word", m.group(1));
-                        this.newFieldCount++;
+                        String oldId = value.toString();
+                        String newId = this.getFidMapper().getMagicGenomeId(oldId);
+                        if (newId == null) {
+                            // Here we don't have an ID for this genome.  Count it as an error.
+                            gNotFoundCount++;
+                        } else {
+                            this.putNewId(newFields, newId, "genome_word", m.group(1));
+                            this.newFieldCount++;
+                        }
                     }
                 } else {
                     // Not a genome field.  Check for a feature field.
@@ -114,11 +137,9 @@ public abstract class JsonConverter {
                     if (m.matches()) {
                         String oldId = fieldEntry.getValue().toString();
                         String newId = this.getFidMapper().getMagicFid(oldId);
-                        if (newId == null) {
-                            // The ID was not found.  This is only a problem for patric IDs.
-                            if (m.group(1).contentEquals("patric"))
-                                fNotFoundCount++;
-                        } else {
+                        if (newId == null)
+                            fNotFoundCount++;
+                        else {
                             this.putNewId(newFields, newId, "feature_word", m.group(2));
                             this.newFieldCount++;
                         }
@@ -132,6 +153,7 @@ public abstract class JsonConverter {
             if (nowTime - lastMessage >= 5000) {
                 log.info("{} records scanned.  {} fields added.  {} genomes and {} features were not found.",
                         recordCount, this.newFieldCount, gNotFoundCount, fNotFoundCount);
+                lastMessage = nowTime;
             }
         }
         log.info("{} total records scanned in {}.  {} fields added.  {} genomes and {} features were not found.",
@@ -153,7 +175,7 @@ public abstract class JsonConverter {
      * @param newName		base name for the new key
      * @param suffix		optional suffix for the new key
      */
-    private void putNewId(Map<String, String> newFields, String newId, String newName, String suffix) {
+    private void putNewId(Map<String, Object> newFields, Object newId, String newName, String suffix) {
         // Compute the full name for the new mapping.
         String fullName = (suffix != null ? newName + suffix : newName);
         newFields.put(fullName, newId);
@@ -169,18 +191,34 @@ public abstract class JsonConverter {
             log.info("No changes made to {}.", this.jsonFile);
         else {
             log.info("Saving {} with {} new fields.", this.jsonFile, this.newFieldCount);
-            String jsonString = Jsoner.prettyPrint(Jsoner.serialize(this.jsonList));
+            long lastMsg = System.currentTimeMillis();
+            // Because of the large file sizes, we have to save the JSON one record at a time.
             try (PrintWriter jsonWriter = new PrintWriter(this.jsonFile)) {
-                jsonWriter.write(jsonString);
+                jsonWriter.println("[");
+                int rCount = 0;
+                for (var obj : this.jsonList) {
+                    rCount++;
+                    String objString = Jsoner.prettyPrint(Jsoner.serialize(obj));
+                    if (rCount > 1)
+                        jsonWriter.println(",");
+                    jsonWriter.print(objString);
+                    long nowTime = System.currentTimeMillis();
+                    if (nowTime - lastMsg >= 5000) {
+                        log.info("{} records written to {}.", rCount, this.jsonFile);
+                        lastMsg = nowTime;
+                    }
+                }
+                jsonWriter.println("\n]");
+                log.info("{} total records written to {}.", rCount, this.jsonFile);
             }
         }
     }
 
-	/**
-	 * @return the fidMapper
-	 */
-	public FidMapper getFidMapper() {
-		return fidMapper;
-	}
+    /**
+     * @return the fidMapper
+     */
+    public FidMapper getFidMapper() {
+        return fidMapper;
+    }
 
 }

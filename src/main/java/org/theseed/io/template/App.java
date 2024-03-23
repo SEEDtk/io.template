@@ -26,7 +26,7 @@ public class App {
         case "text" :
             processor = new TemplateTextProcessor();
             break;
-        case "magicJson" :
+        case "jsonMagic" :
             processor = new MagicJsonProcessor();
             break;
         default:

@@ -6,8 +6,10 @@ package org.theseed.json;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.theseed.magic.FidMapper;
 
+import com.github.cliftonlabs.json_simple.JsonException;
 import com.github.cliftonlabs.json_simple.JsonKey;
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -57,8 +59,9 @@ public class GenomeJsonConverter extends JsonConverter {
      * @param dir			input directory
      *
      * @throws IOException
+     * @throws JsonException
      */
-    public GenomeJsonConverter(FidMapper fidMap, File dir) throws IOException {
+    public GenomeJsonConverter(FidMapper fidMap, File dir) throws IOException, JsonException {
         super(fidMap, dir, "genome.json");
     }
 
@@ -67,7 +70,7 @@ public class GenomeJsonConverter extends JsonConverter {
         // Get the genome ID and name and perform the setup.
         String genomeId = record.getStringOrDefault(SpecialKeys.GENOME_ID);
         String genomeName = record.getStringOrDefault(SpecialKeys.GENOME_NAME);
-        if (genomeId == null || genomeName == null)
+        if (StringUtils.isBlank(genomeId) || StringUtils.isBlank(genomeName))
             log.error("Malformed genome record found in {}.", this.getFile());
         else {
             this.getFidMapper().setup(genomeId, genomeName);

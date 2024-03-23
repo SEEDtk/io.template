@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import org.theseed.magic.FidMapper;
 
+import com.github.cliftonlabs.json_simple.JsonException;
 import com.github.cliftonlabs.json_simple.JsonObject;
 
 /**
@@ -26,8 +27,9 @@ public class NormalJsonConverter extends JsonConverter {
      * @param fileName		name of the file in that directory
      *
      * @throws IOException
+     * @throws JsonException
      */
-    public NormalJsonConverter(FidMapper fidMap, File dir, String fileName) throws IOException {
+    public NormalJsonConverter(FidMapper fidMap, File dir, String fileName) throws IOException, JsonException {
         super(fidMap, dir, fileName);
     }
 
