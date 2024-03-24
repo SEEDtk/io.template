@@ -158,7 +158,7 @@ public class MagicJsonProcessor extends BaseProcessor {
             File[] subDirs = otherDir.listFiles(SUB_DIR_FILTER);
             log.info("{} subdirectories to process in {}.", subDirs.length, otherDir);
             for (File subDir : subDirs) {
-                File[] jsonFiles = this.getJsonFiles(otherDir);
+                File[] jsonFiles = this.getJsonFiles(subDir);
                 if (jsonFiles.length == 0)
                     log.warn("No JSON files found in {}.", subDir);
                 else {
