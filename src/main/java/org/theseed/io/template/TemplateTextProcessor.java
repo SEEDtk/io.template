@@ -392,7 +392,7 @@ public class TemplateTextProcessor extends BaseProcessor {
                 // This list is used to buffer the main template and the linked ones.
                 List<String> translations = new ArrayList<String>(this.linkedTemplates.size() + 1);
                 // Read the input file.
-                log.info("Reading input file.");
+                log.info("Reading input file {}.", mainFile);
                 for (var line : mainStream) {
                     count++;
                     String translation = this.template.apply(line);
@@ -411,13 +411,13 @@ public class TemplateTextProcessor extends BaseProcessor {
                         length += translation.length();
                         String keyValue = line.get(keyIdx);
                         writer.write(baseFileName, keyValue, translation);
-                        if (log.isInfoEnabled()) {
-                            long now = System.currentTimeMillis();
-                            if (now - lastMessage >= 5000)
-                                log.info("{} lines read, {} characters written.", count, length);
-                            lastMessage = now;
-                        }
                         translations.clear();
+                    }
+                    if (log.isInfoEnabled()) {
+                        long now = System.currentTimeMillis();
+                        if (now - lastMessage >= 5000)
+                            log.info("{} lines read, {} characters written.", count, length);
+                        lastMessage = now;
                     }
                 }
                 if (this.linkedTemplates.size() > 0)
