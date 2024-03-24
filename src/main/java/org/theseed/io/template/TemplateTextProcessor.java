@@ -6,6 +6,7 @@ package org.theseed.io.template;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -212,6 +213,7 @@ public class TemplateTextProcessor extends BaseProcessor {
         }
         // Loop through the input directories.
         int dirCount = 0;
+        long startTime = System.currentTimeMillis();
         for (File baseDir : this.inDirList) {
             this.currentDir = baseDir;
             // Compute the output file for this directory.
@@ -234,6 +236,7 @@ public class TemplateTextProcessor extends BaseProcessor {
             if (! skipFile) {
                 this.executeTemplates(this.templateFile, writer);
                 this.wordCount += writer.getWordCount();
+                log.info("{} words generated in {}.", this.wordCount, Duration.ofMillis(System.currentTimeMillis() - startTime));
             }
         }
         log.info("All templates processed.  {} words generated ({} estimated tokens).", this.wordCount, this.wordCount * 2.2);
