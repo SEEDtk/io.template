@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.theseed.io.template;
+package org.theseed.io.template.utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.io.FieldInputStream;
+import org.theseed.io.template.LineTemplate;
 import org.theseed.io.template.output.TemplateHashWriter;
 
 /**
