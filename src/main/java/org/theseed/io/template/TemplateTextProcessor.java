@@ -25,6 +25,7 @@ import org.theseed.io.template.output.ITemplateWriter;
 import org.theseed.io.template.output.TemplateHashWriter;
 import org.theseed.io.template.output.TemplatePrintWriter;
 
+
 /**
  * This sub-command converts incoming files to text paragraphs using a LineTemplate.
  *
@@ -106,8 +107,8 @@ public class TemplateTextProcessor extends BaseProcessor {
     private File globalTemplateFile;
     /** global template output */
     private TemplateHashWriter globals;
-    /** output word counter */
-    private long wordCount;
+    /** output token counter */
+    private long tokenCount;
 
     // COMMAND-LINE OPTIONS
 
@@ -198,7 +199,7 @@ public class TemplateTextProcessor extends BaseProcessor {
         this.linkedTemplates = new ArrayList<LinkedTemplateDescriptor>();
         this.linkedFiles = new ArrayList<File>();
         this.template = null;
-        this.wordCount = 0;
+        this.tokenCount = 0;
         return true;
     }
 
@@ -235,11 +236,11 @@ public class TemplateTextProcessor extends BaseProcessor {
             }
             if (! skipFile) {
                 this.executeTemplates(this.templateFile, writer);
-                this.wordCount += writer.getWordCount();
-                log.info("{} words generated in {}.", this.wordCount, Duration.ofMillis(System.currentTimeMillis() - startTime));
+                this.tokenCount += writer.getTokenCount();
+                log.info("{} tokens generated in {}.", this.tokenCount, Duration.ofMillis(System.currentTimeMillis() - startTime));
             }
         }
-        log.info("All templates processed.  {} words generated ({} estimated tokens).", this.wordCount, this.wordCount * 2.2);
+        log.info("All templates processed.  {} estimated tokens.", this.tokenCount);
     }
 
     /**
