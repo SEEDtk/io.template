@@ -11,7 +11,8 @@ import org.theseed.basic.BaseProcessor;
  * Commands for generating texts from templates and field input streams.
  *
  * text			generate a text template from one or more directories of data
- * magicJson	added magic IDs to genome and subsystem dumps
+ * magicJson	add magic IDs to genome and subsystem dumps
+ * pubmed		find all the pubmed IDs in JSON dump directories
  *
  */
 public class App {
@@ -28,6 +29,9 @@ public class App {
             break;
         case "jsonMagic" :
             processor = new MagicJsonProcessor();
+            break;
+        case "pubmed" :
+            processor = new PubmedProcessor();
             break;
         default:
             throw new RuntimeException("Invalid command " + command);
