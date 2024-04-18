@@ -138,11 +138,13 @@ public class PubmedProcessor extends BaseReportProcessor {
         // We accumulate the pubmed IDs in a set and then write the set at the end.
         // A tree set is used so that the output is sorted.
         Set<String> pmIDs = new TreeSet<String>();
+        int fileCount = 0;
         // Loop through the input directories.
         for (File dir : this.inDirs) {
             // Process each possible input file in this directory.
             for (var fileEntry : this.fieldMap.entrySet()) {
                 File inFile = new File(dir, fileEntry.getKey());
+                fileCount++;
                 if (inFile.canRead()) {
                     log.info("Reading IDs from {}.", inFile);
                     // Count the number of records and the number of IDs found.
@@ -161,17 +163,25 @@ public class PubmedProcessor extends BaseReportProcessor {
                         for (var line : inStream) {
                             inCount++;
                             for (int idx : idxes) {
-                                // TODO
+                                List<String> pubmeds = line.getList(idx);
+                                pmIDs.addAll(pubmeds);
+                                idCount += pubmeds.size();
                             }
                         }
                     }
+                    log.info("{} records read from {}.  {} pubmed IDs found,", inCount, idCount);
                 }
             }
         }
-        // TODO code for runReporter
-
+        // Now we have all the pubmed IDs.
+        log.info("{} PUBMED IDs harvested from {} files.", pmIDs.size(), fileCount);
+        // Write the PUBMED IDs to the output.
+        writer.println("pubmed_id");
+        for (String pmID : pmIDs)
+            writer.println(pmID);
+        writer.flush();
+        log.info("PUBMED ID list written to output.");
     }
-
 
 
  }
