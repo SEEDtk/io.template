@@ -169,7 +169,8 @@ public class PubmedProcessor extends BaseReportProcessor {
                             }
                         }
                     }
-                    log.info("{} records read from {}.  {} pubmed IDs found,", inCount, idCount);
+                    if (inCount > 0)
+                        log.info("{} records read from {}.  {} pubmed IDs found,", inCount, inFile, idCount);
                 }
             }
         }
