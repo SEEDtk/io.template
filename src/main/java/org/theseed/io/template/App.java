@@ -17,6 +17,13 @@ import org.theseed.basic.BaseProcessor;
  */
 public class App {
 
+    /** static array containing command names and comments */
+    protected static final String[] COMMANDS = new String[] {
+             "text", "generate a text template from one or more directories of data",
+             "magicJson", "add magic IDs to genome and subsystem dumps",
+             "pubmed", "find all the pubmed IDs in JSON dump directories",
+    };
+
     public static void main( String[] args ) {
         // Get the control parameter.
         String command = args[0];
@@ -33,13 +40,20 @@ public class App {
         case "pubmed" :
             processor = new PubmedProcessor();
             break;
-        default:
-            throw new RuntimeException("Invalid command " + command);
+        case "-h" :
+        case "--help" :
+            processor = null;
+            break;
+        default :
+            throw new RuntimeException("Invalid command " + command + ".");
         }
-        // Process it.
-        boolean ok = processor.parseCommand(newArgs);
-        if (ok) {
-            processor.run();
+        if (processor == null)
+            BaseProcessor.showCommands(COMMANDS);
+        else {
+            boolean ok = processor.parseCommand(newArgs);
+            if (ok) {
+                processor.run();
+            }
         }
     }
 }
