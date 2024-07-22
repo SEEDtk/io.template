@@ -221,7 +221,7 @@ public class TemplateTextProcessor extends BaseProcessor {
     private void processTemplate(Entry<File, File> filePair) {
         File source = filePair.getKey();
         File target = filePair.getValue();
-        log.info("Procesing templates against {} to produce {}.", source, target);
+        log.info("Processing templates against {} to produce {}.", source, target);
         long tokens = TextFactory.processNormalTemplate(source, this.templateFile, target, this.globals);
         synchronized(this) {
             this.tokenCount += tokens;
