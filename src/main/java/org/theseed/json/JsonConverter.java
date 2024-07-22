@@ -13,6 +13,7 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.magic.FidMapper;
@@ -27,6 +28,11 @@ import com.github.cliftonlabs.json_simple.Jsoner;
  * class provides a hook for preprocessing.  In this hook, the subclasses can handle setting up the
  * current genome, initializing patric IDs, and computing feature ID mappings.  The remainder will
  * update the file's JSON array in place and then store it back.
+ *
+ * We recognize three basic types of keys.  If a genome ID is found, we add a second key whose value is
+ * the corresponding genome word.  If a feature ID is found, we add a second key whose value is the
+ * corresponding feature word.  If a phrase key is found, we replace feature IDs in the text with
+ * feature words.
  *
  * @author Bruce Parrello
  *
@@ -44,10 +50,16 @@ public abstract class JsonConverter {
     private JsonArray jsonList;
     /** number of new fields added */
     private int newFieldCount;
-    /** match pattern for genome IDs */
-    public static final Pattern GENOME_ID_PATTERN = Pattern.compile("genome_id(_[a-zA-Z0-9])?");
-    /** match pattern for feature IDs */
-    public static final Pattern FEATURE_ID_PATTERN = Pattern.compile("(patric_id|interactor)(_[a-zA-Z0-9])?");
+    /** number of fields changed */
+    private int changeFieldCount;
+    /** match pattern for genome ID keys */
+    public static final Pattern GENOME_KEY_PATTERN = Pattern.compile("genome_id(_[a-zA-Z0-9])?");
+    /** match pattern for feature ID keys */
+    public static final Pattern FEATURE_KEY_PATTERN = Pattern.compile("(patric_id|interactor)(_[a-zA-Z0-9])?");
+    /** match pattern for phrase keys */
+    public static final Pattern PHRASE_KEY_PATTERN = Pattern.compile("(gene_rule)");
+    /** match pattern for feature IDs themselves */
+    private static final Pattern FEATURE_ID_PATTERN = Pattern.compile("\\bfig\\|\\d+\\.\\d+\\.\\w+\\.\\d+\\b");
 
     /**
      * Construct a JSON converter for a specified file.
@@ -72,6 +84,7 @@ public abstract class JsonConverter {
         log.info("Processing {} file {} with {} records.", dir, fileName, this.jsonList.size());
         // Denote there have been no modifications.
         this.newFieldCount = 0;
+        this.changeFieldCount = 0;
     }
 
     /**
@@ -99,7 +112,7 @@ public abstract class JsonConverter {
             Map<String, Object> newFields = new TreeMap<String, Object>();
             for (var fieldEntry : record.entrySet()) {
                 String key = fieldEntry.getKey();
-                Matcher m = GENOME_ID_PATTERN.matcher(key);
+                Matcher m = GENOME_KEY_PATTERN.matcher(key);
                 if (m.matches()) {
                     Object value = fieldEntry.getValue();
                     // Here we must check for the special case that the value is an array.
@@ -133,7 +146,7 @@ public abstract class JsonConverter {
                     }
                 } else {
                     // Not a genome field.  Check for a feature field.
-                    m = FEATURE_ID_PATTERN.matcher(key);
+                    m = FEATURE_KEY_PATTERN.matcher(key);
                     if (m.matches()) {
                         String oldId = fieldEntry.getValue().toString();
                         String newId = this.getFidMapper().getMagicFid(oldId);
@@ -143,6 +156,35 @@ public abstract class JsonConverter {
                             this.putNewId(newFields, newId, "feature_word", m.group(2));
                             this.newFieldCount++;
                         }
+                    } else {
+                        // Finally, check for a phrase key.  In a phrase key, we replace feature IDs found
+                        // in the value.
+                        m = PHRASE_KEY_PATTERN.matcher(key);
+                        if (m.matches()) {
+                            String oldValue = fieldEntry.getValue().toString();
+                            StringBuilder newValue = new StringBuilder(oldValue.length() * 2);
+                            // Here we find all the occurrences of feature IDs.
+                            Matcher vm = FEATURE_ID_PATTERN.matcher(oldValue);
+                            int currPos = 0;
+                            while (vm.find()) {
+                                // Get the section before the current match.
+                                newValue.append(StringUtils.substring(oldValue, currPos, vm.start()));
+                                // Replace the current match with the appropriate feature word.
+                                String fid = vm.group();
+                                String newFid = this.fidMapper.getMagicFid(fid);
+                                if (newFid == null) {
+                                    newFid = fid;
+                                    fNotFoundCount++;
+                                }
+                                newValue.append(newFid);
+                                // Position after the current match.
+                                currPos = vm.end();
+                            }
+                            // Copy the residual into the output buffer and store it.
+                            newValue.append(StringUtils.substring(oldValue, currPos));
+                            newFields.put(key, newValue.toString());
+                            this.changeFieldCount++;
+                        }
                     }
                 }
             }
@@ -151,13 +193,13 @@ public abstract class JsonConverter {
                 record.putAll(newFields);
             long nowTime = System.currentTimeMillis();
             if (nowTime - lastMessage >= 5000) {
-                log.info("{} records scanned.  {} fields added.  {} genomes and {} features were not found.",
-                        recordCount, this.newFieldCount, gNotFoundCount, fNotFoundCount);
+                log.info("{} records scanned.  {} fields added and {} changed.  {} genomes and {} features were not found.",
+                        recordCount, this.newFieldCount, this.changeFieldCount, gNotFoundCount, fNotFoundCount);
                 lastMessage = nowTime;
             }
         }
-        log.info("{} total records scanned in {}.  {} fields added.  {} genomes and {} features were not found.",
-                recordCount, this.jsonFile, this.newFieldCount, gNotFoundCount, fNotFoundCount);
+        log.info("{} total records scanned in {}.  {} fields added and {} changed.  {} genomes and {} features were not found.",
+                recordCount, this.jsonFile, this.newFieldCount, this.changeFieldCount, gNotFoundCount, fNotFoundCount);
     }
 
     /**
@@ -187,7 +229,7 @@ public abstract class JsonConverter {
      * @throws IOException
      */
     public void save() throws IOException {
-        if (this.newFieldCount == 0)
+        if (this.unchanged())
             log.info("No changes made to {}.", this.jsonFile);
         else {
             log.info("Saving {} with {} new fields.", this.jsonFile, this.newFieldCount);
@@ -212,6 +254,13 @@ public abstract class JsonConverter {
                 log.info("{} total records written to {}.", rCount, this.jsonFile);
             }
         }
+    }
+
+    /**
+     * @return TRUE if this file has not been changed
+     */
+    private boolean unchanged() {
+        return (this.newFieldCount == 0 && this.changeFieldCount == 0);
     }
 
     /**
