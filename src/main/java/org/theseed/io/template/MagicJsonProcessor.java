@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.basic.ParseFailureException;
+import org.theseed.io.MasterGenomeDir;
 import org.theseed.json.FeatureJsonConverter;
 import org.theseed.json.GenomeJsonConverter;
 import org.theseed.json.JsonConverter;
@@ -57,21 +58,9 @@ public class MagicJsonProcessor extends BaseProcessor {
     /** feature ID mapper */
     private FidMapper fidMapper;
     /** list of genome directories to process */
-    private File[] genomeDirs;
+    private MasterGenomeDir genomeDirs;
     /** this set contains the special file names for the genome processor */
     protected static final Set<String> SPECIAL_FILE_SET = Set.of("genome.json", "genome_feature.json");
-    /** genome subdirectory filter */
-    private static final FileFilter GENOME_DIR_FILTER = new FileFilter() {
-        @Override
-        public boolean accept(File pathname) {
-            boolean retVal = pathname.isDirectory();
-            if (retVal) {
-                File gFile = new File(pathname, "genome.json");
-                retVal = gFile.canRead();
-            }
-            return retVal;
-        }
-    };
     /** general subdirectory filter */
     private static final FileFilter SUB_DIR_FILTER = new FileFilter() {
         @Override
@@ -112,10 +101,10 @@ public class MagicJsonProcessor extends BaseProcessor {
         if (! this.genomesDir.isDirectory())
             throw new FileNotFoundException("Input genome master directory " + this.genomesDir + " is not found or invalid.");
         // Find all the genomes.
-        this.genomeDirs = this.genomesDir.listFiles(GENOME_DIR_FILTER);
-        if (this.genomeDirs.length == 0)
+        this.genomeDirs = new MasterGenomeDir(this.genomesDir);
+        if (this.genomeDirs.size() == 0)
             throw new FileNotFoundException("No usable genome subdirectories found in " + this.genomesDir + ".");
-        log.info("{} genome subdirectories found in {}.", this.genomeDirs.length, this.genomesDir);
+        log.info("{} genome subdirectories found in {}.", this.genomeDirs.size(), this.genomesDir);
         // Now verify the additional directories.
         for (File otherDir : otherDirs) {
             if (! otherDir.isDirectory())
@@ -129,11 +118,11 @@ public class MagicJsonProcessor extends BaseProcessor {
     @Override
     protected void runCommand() throws Exception {
         // We process the genome master directory first.
-        log.info("Processing {} genome subdirectories.", this.genomeDirs.length);
+        log.info("Processing {} genome subdirectories.", this.genomeDirs.size());
         int gCount = 0;
         for (File genomeDir : this.genomeDirs) {
             gCount++;
-            log.info("Processing genome {} of {} in directory {}.", gCount, this.genomeDirs.length, genomeDir);
+            log.info("Processing genome {} of {} in directory {}.", gCount, this.genomeDirs.size(), genomeDir);
             // Get the list of json files.
             File[] jsonFiles = this.getJsonFiles(genomeDir);
             log.info("{} files to convert in {}.", jsonFiles.length, genomeDir);
