@@ -11,7 +11,7 @@ import org.theseed.basic.BaseProcessor;
  * Commands for generating texts from templates and field input streams.
  *
  * text			generate a text template from one or more directories of data
- * magicJson	add magic IDs to genome and subsystem dumps
+ * jsonMagic	add magic IDs to genome and subsystem dumps
  * pubmed		find all the pubmed IDs in JSON dump directories
  *
  */
@@ -20,7 +20,7 @@ public class App {
     /** static array containing command names and comments */
     protected static final String[] COMMANDS = new String[] {
              "text", "generate a text template from one or more directories of data",
-             "magicJson", "add magic IDs to genome and subsystem dumps",
+             "jsonMagic", "add magic IDs to genome and subsystem dumps",
              "pubmed", "find all the pubmed IDs in JSON dump directories",
     };
 
