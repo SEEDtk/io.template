@@ -59,7 +59,7 @@ public abstract class JsonConverter {
     /** match pattern for phrase keys */
     public static final Pattern PHRASE_KEY_PATTERN = Pattern.compile("(gene_rule)");
     /** match pattern for feature IDs themselves */
-    private static final Pattern FEATURE_ID_PATTERN = Pattern.compile("\\bfig\\|\\d+\\.\\d+\\.\\w+\\.\\d+\\b");
+    private static final Pattern FEATURE_ID_PATTERN = Pattern.compile("\\bfig\\|\\d+\\.\\d+\\.[^.]+\\.\\d+\\b");
 
     /**
      * Construct a JSON converter for a specified file.
