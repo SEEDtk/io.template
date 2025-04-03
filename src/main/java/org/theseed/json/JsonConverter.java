@@ -24,10 +24,13 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 import com.github.cliftonlabs.json_simple.Jsoner;
 
 /**
- * This method processes a JSON file, adding magic word IDs for the features and genomes.  The base
- * class provides a hook for preprocessing.  In this hook, the subclasses can handle setting up the
- * current genome, initializing patric IDs, and computing feature ID mappings.  The remainder will
- * update the file's JSON array in place and then store it back.
+ * This class processes a JSON file, modifying identifiers for the features and genomes.  The base
+ * class provides a hook for preprocessing and one for conversion.  In this hook, the subclasses
+ * can handle setting up the current genome, initializing patric IDs, and computing feature ID mappings.
+ * The remainder will update the file's JSON array in place and then store it back.
+ *
+ * This single class supports both the addition of new identifiers (magic words) or the translation
+ * of identifiers due to combining multiple genomes into a single one.
  *
  * We recognize three basic types of keys.  If a genome ID is found, we add a second key whose value is
  * the corresponding genome word.  If a feature ID is found, we add a second key whose value is the
@@ -124,7 +127,7 @@ public abstract class JsonConverter {
                         Iterator<Object> iter = ((JsonArray) value).iterator();
                         while (iter.hasNext() && ok) {
                             String oldId = iter.next().toString();
-                            String newId = this.getFidMapper().getMagicGenomeId(oldId);
+                            String newId = this.getFidMapper().getNewGenomeId(oldId);
                             if (newId == null)
                                 ok = false;
                             else
@@ -135,7 +138,7 @@ public abstract class JsonConverter {
                         }
                     } else {
                         String oldId = value.toString();
-                        String newId = this.getFidMapper().getMagicGenomeId(oldId);
+                        String newId = this.getFidMapper().getNewGenomeId(oldId);
                         if (newId == null) {
                             // Here we don't have an ID for this genome.  Count it as an error.
                             gNotFoundCount++;
@@ -149,7 +152,7 @@ public abstract class JsonConverter {
                     m = FEATURE_KEY_PATTERN.matcher(key);
                     if (m.matches()) {
                         String oldId = fieldEntry.getValue().toString();
-                        String newId = this.getFidMapper().getMagicFid(oldId);
+                        String newId = this.getFidMapper().getNewFid(oldId);
                         if (newId == null)
                             fNotFoundCount++;
                         else {
@@ -171,7 +174,7 @@ public abstract class JsonConverter {
                                 newValue.append(StringUtils.substring(oldValue, currPos, vm.start()));
                                 // Replace the current match with the appropriate feature word.
                                 String fid = vm.group();
-                                String newFid = this.fidMapper.getMagicFid(fid);
+                                String newFid = this.fidMapper.getNewFid(fid);
                                 if (newFid == null) {
                                     newFid = fid;
                                     fNotFoundCount++;

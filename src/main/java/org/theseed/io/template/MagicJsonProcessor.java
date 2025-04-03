@@ -21,6 +21,7 @@ import org.theseed.json.GenomeJsonConverter;
 import org.theseed.json.JsonConverter;
 import org.theseed.json.NormalJsonConverter;
 import org.theseed.magic.FidMapper;
+import org.theseed.magic.MagicFidMapper;
 
 
 /**
@@ -111,7 +112,7 @@ public class MagicJsonProcessor extends BaseProcessor {
                 throw new FileNotFoundException("Additional master directory " + otherDir + " is not found or invalid.");
         }
         log.info("{} additional directories scheduled.", otherDirs.size());
-        this.fidMapper = new FidMapper();
+        this.fidMapper = new MagicFidMapper();
         return true;
     }
 

@@ -76,7 +76,7 @@ public class FeatureJsonConverter extends JsonConverter {
             // Note the function is only used for coding regions, and the feature ID is optional.
             try {
                 // Store the FIG id mapping.
-               this.getFidMapper().getMagicFid(fid, function);
+               this.getFidMapper().getNewFid(fid, function);
             } catch (ParseFailureException e) {
                 // Here we have a feature ID for the wrong genome.  Log the error
                 // and skip the record.
