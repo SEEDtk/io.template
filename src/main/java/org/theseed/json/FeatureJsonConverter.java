@@ -73,7 +73,7 @@ public class FeatureJsonConverter extends JsonConverter {
         String fid = record.getStringOrDefault(SpecialKeys.PATRIC_ID);
         if (! StringUtils.isBlank(fid)) {
             String function = record.getStringOrDefault(SpecialKeys.PRODUCT);
-            // Note the function is only used for coding regions, and the feature ID is optional.
+            // Note the function is only used for coding regions.
             try {
                 // Store the FIG id mapping.
                this.getFidMapper().getNewFid(fid, function);
