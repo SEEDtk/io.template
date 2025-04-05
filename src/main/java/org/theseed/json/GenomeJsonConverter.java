@@ -57,12 +57,13 @@ public class GenomeJsonConverter extends JsonConverter {
      *
      * @param fidMap		feature ID mapper used to save the new IDs
      * @param dir			input directory
+     * @param mode			key-conversion mode
      *
      * @throws IOException
      * @throws JsonException
      */
-    public GenomeJsonConverter(FidMapper fidMap, File dir) throws IOException, JsonException {
-        super(fidMap, dir, "genome.json");
+    public GenomeJsonConverter(FidMapper fidMap, File dir, JsonConverter.KeyMode mode) throws IOException, JsonException {
+        super(fidMap, dir, "genome.json", mode);
     }
 
     @Override

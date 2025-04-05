@@ -58,12 +58,13 @@ public class FeatureJsonConverter extends JsonConverter {
      *
      * @param fidMap	feature ID word mapper
      * @param dir		current genome directory
+     * @param mode		key-storage mode
      *
      * @throws IOException
      * @throws JsonException
      */
-    public FeatureJsonConverter(FidMapper fidMap, File dir) throws IOException, JsonException {
-        super(fidMap, dir, "genome_feature.json");
+    public FeatureJsonConverter(FidMapper fidMap, File dir, JsonConverter.KeyMode mode) throws IOException, JsonException {
+        super(fidMap, dir, "genome_feature.json", mode);
     }
 
     @Override

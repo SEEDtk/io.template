@@ -13,6 +13,7 @@ import org.theseed.basic.BaseProcessor;
  * text			generate a text template from one or more directories of data
  * jsonMagic	add magic IDs to genome and subsystem dumps
  * pubmed		find all the pubmed IDs in JSON dump directories
+ * combine		combine genomes in JSON dump directories
  *
  */
 public class App {
@@ -22,6 +23,7 @@ public class App {
              "text", "generate a text template from one or more directories of data",
              "jsonMagic", "add magic IDs to genome and subsystem dumps",
              "pubmed", "find all the pubmed IDs in JSON dump directories",
+             "combine", "combine genomes in JSON dump directories",
     };
 
     public static void main( String[] args ) {
@@ -40,6 +42,9 @@ public class App {
         case "pubmed" :
             processor = new PubmedProcessor();
             break;
+        case "combine" :
+        	processor = new CombineProcessor();
+        	break;
         case "-h" :
         case "--help" :
             processor = null;

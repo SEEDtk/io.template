@@ -55,6 +55,8 @@ public abstract class JsonConverter {
     private int newFieldCount;
     /** number of fields changed */
     private int changeFieldCount;
+    /** key storage method */
+    private KeyMode keyMode;
     /** match pattern for genome ID keys */
     public static final Pattern GENOME_KEY_PATTERN = Pattern.compile("genome_id(_[a-zA-Z0-9])?");
     /** match pattern for feature ID keys */
@@ -65,30 +67,85 @@ public abstract class JsonConverter {
     private static final Pattern FEATURE_ID_PATTERN = Pattern.compile("\\bfig\\|\\d+\\.\\d+\\.[^.]+\\.\\d+\\b");
 
     /**
+     * This enum determines how a new value is stored in the case of a new genome or feature ID key in the
+     * json.
+     */
+    public static enum KeyMode {
+    	/** store the new ID over the old one */
+    	USE_OLD_KEY {
+			@Override
+			public void putNewId(String key, Map<String, Object> newFields, Object newId, String newName,
+					String suffix) {
+				// Simply use the old key value with the new ID.
+				newFields.put(key, newId);
+			}
+		},
+    	/** add an alternate key using "word" for the new ID */
+    	USE_WORD_KEY {
+			@Override
+			public void putNewId(String key, Map<String, Object> newFields, Object newId, String newName,
+					String suffix) {
+		        // Compute the full name for the new mapping.
+				String wordName = newName + "_word";
+		        String fullName = (suffix != null ? wordName + suffix : wordName);
+		        newFields.put(fullName, newId);
+			}
+		};
+
+        /**
+         * Store a new ID mapping in the new-fields map.
+         *
+         * @param key			original key
+         * @param newFields		new-fields map to receive the ID mapping
+         * @param newId			ID to store
+         * @param newName		type of the new key ("genome" or "feature")
+         * @param suffix		optional suffix for the new key
+         */
+        public abstract void putNewId(String key, Map<String, Object> newFields, Object newId, String newName, String suffix);
+    }
+
+    /**
      * Construct a JSON converter for a specified file.
      *
      * @param fidMapper		feature ID mapper to use
      * @param dir			directory containing the file
      * @param fileName		base name of the file
+     * @param mode			key storage mode to use
      *
      * @throws IOException
      * @throws JsonException
      */
-    public JsonConverter(FidMapper fidMap, File dir, String fileName) throws IOException, JsonException {
+    public JsonConverter(FidMapper fidMap, File dir, String fileName, KeyMode mode) throws IOException, JsonException {
         // Save the feature ID mapper.
         this.fidMapper = fidMap;
+        // Save the key-storage mode.
+        this.keyMode = mode;
         // Compute the file name.
         this.jsonFile = new File(dir, fileName);
         // Load the file into memory.
-        log.info("Reading file {}.", fileName);
-        try (FileReader reader = new FileReader(this.jsonFile)) {
-            this.jsonList = (JsonArray) Jsoner.deserialize(reader);
-        }
+        this.jsonList = readJson(this.jsonFile);
         log.info("Processing {} file {} with {} records.", dir, fileName, this.jsonList.size());
         // Denote there have been no modifications.
         this.newFieldCount = 0;
         this.changeFieldCount = 0;
     }
+
+	/**
+	 * Read a JSON file into an array.
+	 *
+	 * @param inFile	input JSON file to read
+	 *
+	 * @throws JsonException
+	 * @throws IOException
+	 */
+	public static JsonArray readJson(File inFile) throws JsonException, IOException {
+		JsonArray retVal = null;
+		log.info("Reading JSON file {}.", inFile);
+        try (FileReader reader = new FileReader(inFile)) {
+            retVal = (JsonArray) Jsoner.deserialize(reader);
+        }
+        return retVal;
+	}
 
     /**
      * @return the current JSON file name
@@ -134,7 +191,7 @@ public abstract class JsonConverter {
                                 newValues.add(newId);
                         }
                         if (ok) {
-                            this.putNewId(newFields, newValues, "genome_word", m.group(1));
+                            this.putNewId(key, newFields, newValues, "genome", m.group(1));
                         }
                     } else {
                         String oldId = value.toString();
@@ -143,7 +200,7 @@ public abstract class JsonConverter {
                             // Here we don't have an ID for this genome.  Count it as an error.
                             gNotFoundCount++;
                         } else {
-                            this.putNewId(newFields, newId, "genome_word", m.group(1));
+                            this.putNewId(key, newFields, newId, "genome", m.group(1));
                             this.newFieldCount++;
                         }
                     }
@@ -156,7 +213,7 @@ public abstract class JsonConverter {
                         if (newId == null)
                             fNotFoundCount++;
                         else {
-                            this.putNewId(newFields, newId, "feature_word", m.group(2));
+                            this.putNewId(key, newFields, newId, "feature", m.group(2));
                             this.newFieldCount++;
                         }
                     } else {
@@ -215,62 +272,75 @@ public abstract class JsonConverter {
     /**
      * Store a new ID mapping in the new-fields map.
      *
+     * @param key			original key
      * @param newFields		new-fields map to receive the ID mapping
      * @param newId			ID to store
      * @param newName		base name for the new key
      * @param suffix		optional suffix for the new key
      */
-    private void putNewId(Map<String, Object> newFields, Object newId, String newName, String suffix) {
-        // Compute the full name for the new mapping.
-        String fullName = (suffix != null ? newName + suffix : newName);
-        newFields.put(fullName, newId);
+    private void putNewId(String key, Map<String, Object> newFields, Object newId, String newName, String suffix) {
+    	this.keyMode.putNewId(key, newFields, newId, newName, suffix);
     }
 
     /**
      * Save the JSON data back to the file.
+     * @param targetFile
      *
      * @throws IOException
      */
-    public void save() throws IOException {
-        if (this.unchanged())
-            log.info("No changes made to {}.", this.jsonFile);
-        else {
-            log.info("Saving {} with {} new fields.", this.jsonFile, this.newFieldCount);
-            long lastMsg = System.currentTimeMillis();
-            // Because of the large file sizes, we have to save the JSON one record at a time.
-            try (PrintWriter jsonWriter = new PrintWriter(this.jsonFile)) {
-                jsonWriter.println("[");
-                int rCount = 0;
-                for (var obj : this.jsonList) {
-                    rCount++;
-                    String objString = Jsoner.prettyPrint(Jsoner.serialize(obj));
-                    if (rCount > 1)
-                        jsonWriter.println(",");
-                    jsonWriter.print(objString);
-                    long nowTime = System.currentTimeMillis();
-                    if (nowTime - lastMsg >= 5000) {
-                        log.info("{} records written to {}.", rCount, this.jsonFile);
-                        lastMsg = nowTime;
-                    }
-                }
-                jsonWriter.println("\n]");
-                log.info("{} total records written to {}.", rCount, this.jsonFile);
-            }
+    public void save(File targetFile) throws IOException {
+        log.info("Saving {} to {} with {} new fields.", this.jsonFile, targetFile, this.newFieldCount);
+        // Because of the large file sizes, we have to save the JSON one record at a time.
+        try (PrintWriter jsonWriter = new PrintWriter(targetFile)) {
+            jsonWriter.println("[");
+            JsonArray recordList = this.jsonList;
+            int rCount = writeJsonRecords(targetFile, jsonWriter, recordList, 0);
+            jsonWriter.println("\n]");
+            log.info("{} total records written to {}.", rCount, targetFile);
         }
     }
 
-    /**
-     * @return TRUE if this file has not been changed
-     */
-    private boolean unchanged() {
-        return (this.newFieldCount == 0 && this.changeFieldCount == 0);
-    }
+	/**
+	 * This is a utility method to write JSON records to an open output file. The framework
+	 * not only opens the file, but must handle the start and end brackets. Provision is made
+	 * to handle output record counting.
+	 *
+	 * @param targetFile	output file name (for tracing)
+	 * @param jsonWriter	output print writer
+	 * @param recordList	list of records to write
+	 * @param rCount		number of records already written to the output
+	 *
+	 * @return the updated output record count
+	 */
+	public static int writeJsonRecords(File targetFile, PrintWriter jsonWriter, JsonArray recordList, int rCount) {
+		long lastMsg = System.currentTimeMillis();
+		for (var obj : recordList) {
+		    rCount++;
+		    String objString = Jsoner.prettyPrint(Jsoner.serialize(obj));
+		    if (rCount > 1)
+		        jsonWriter.println(",");
+		    jsonWriter.print(objString);
+		    long nowTime = System.currentTimeMillis();
+		    if (nowTime - lastMsg >= 5000) {
+		        log.info("{} records written to {}.", rCount, targetFile);
+		        lastMsg = nowTime;
+		    }
+		}
+		return rCount;
+	}
 
     /**
      * @return the fidMapper
      */
     public FidMapper getFidMapper() {
         return fidMapper;
+    }
+
+    /**
+     * @return the list of updated JSON records
+     */
+    public JsonArray getJsonList() {
+    	return this.jsonList;
     }
 
 }

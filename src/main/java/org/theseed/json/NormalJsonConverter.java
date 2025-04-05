@@ -25,12 +25,14 @@ public class NormalJsonConverter extends JsonConverter {
      * @param fidMap		feature ID mapper
      * @param dir			current file directory
      * @param fileName		name of the file in that directory
+     * @param mode			key-conversion mode
      *
      * @throws IOException
      * @throws JsonException
      */
-    public NormalJsonConverter(FidMapper fidMap, File dir, String fileName) throws IOException, JsonException {
-        super(fidMap, dir, fileName);
+    public NormalJsonConverter(FidMapper fidMap, File dir, String fileName, JsonConverter.KeyMode mode)
+    		throws IOException, JsonException {
+        super(fidMap, dir, fileName, mode);
     }
 
     @Override
