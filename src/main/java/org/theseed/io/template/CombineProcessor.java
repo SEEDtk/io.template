@@ -7,10 +7,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,8 +51,8 @@ import com.github.cliftonlabs.json_simple.Jsoner;
  * -i	input file containing mappings (if not STDIN)
  *
  * --clear		if specified, the output directory will be erased before processing
- * --sourceCol	index (1-based) or name of source-genome-ID column (default "1")
- * --targetCol	index (1-based) or name of target-genome-ID column (default "2")
+ * --sourceCol	name of source-genome-ID column (default "source_id")
+ * --targetCol	name of target-genome-ID column (default "target_id")
  *
  * @author Bruce Parrello
  *
@@ -73,6 +75,8 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 	private static final Set<String> RATIO_TYPES = Set.of("partial", "hypothetical", "plfam");
 	/** JSON key for GC content percent */
 	private static final JsonKey GC_KEY = new GcContentKey();
+	/** JSON key for genome name */
+	private static final JsonKey NAME_KEY = new GenomeNameKey();
 
 	// COMMAND-LINE OPTIONS
 
@@ -145,6 +149,23 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 
 	}
 
+	/**
+	 * This is a utility class for the genome name key.
+	 */
+	protected static class GenomeNameKey implements JsonKey {
+
+		@Override
+		public String getKey() {
+			return "genome_name";
+		}
+
+		@Override
+		public Object getValue() {
+			return "unknown genome";
+		}
+
+	}
+
 	@Override
 	protected KeyMode getKeyMode() {
 		return JsonConverter.KeyMode.USE_OLD_KEY;
@@ -153,8 +174,8 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 	@Override
 	protected void setJsonUpdateDefaults() {
 		this.inFile = null;
-		this.sourceCol = "1";
-		this.targetCol = "2";
+		this.sourceCol = "source_id";
+		this.targetCol = "target_id";
 		// Insure we have the JSON integer key buffer.
 		this.intKey = new IntJsonKey();
 	}
@@ -210,8 +231,10 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 		JsonObject genomeJson = (JsonObject) genomeList.get(0);
 		// Now we compute the output file.
 		File outFile = this.getOutputFile(inFile);
-		// Get the old and new genome IDs.
+		// Get the old genome ID and set up the new genome.
 		String oldGenomeId  = genomeDir.getName();
+		this.fidMapper.setup(oldGenomeId, genomeJson.getStringOrDefault(NAME_KEY));
+		// Get the new genome ID.
 		String newGenomeId = mapper.getNewGenomeId(oldGenomeId);
 		// If the output file does not exist, we simply write the JSON to the output with the ID updated.
 		if (! outFile.exists()) {
@@ -294,8 +317,8 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 			log.info("Writing updated records from {}.", converter.getFile());
 			rCount = JsonConverter.writeJsonRecords(targetFile, outStream, currentJson, rCount);
 			outStream.println("\n]");
+			log.info("{} total records written to {}.", rCount, targetFile);
 		}
-		log.info("{} total records written to {}.", targetFile);
 	}
 
 	@Override
@@ -315,6 +338,12 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 		grandParent = new File(masterDir, master);
 		parent = new File(grandParent, newGenomeId);
 		File retVal = new File(parent, fileName);
+		// Verify that the parent directory exists.
+		try {
+			FileUtils.forceMkdirParent(retVal);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 		return retVal;
 	}
 

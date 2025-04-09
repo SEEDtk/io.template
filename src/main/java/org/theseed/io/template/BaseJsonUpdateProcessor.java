@@ -7,9 +7,12 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.io.FileUtils;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -133,6 +136,15 @@ public abstract class BaseJsonUpdateProcessor extends BaseProcessor {
                 throw new FileNotFoundException("Additional master directory " + otherDir + " is not found or invalid.");
         }
         log.info("{} additional directories scheduled.", otherDirs.size());
+        // Verify the output directory.
+        if (! this.outDir.isDirectory()) {
+        	log.info("Creating output directory {}.", this.outDir);
+        	FileUtils.forceMkdir(this.outDir);
+        } else if (this.clearFlag) {
+        	log.info("Erasing output directory {}.", this.outDir);
+        	FileUtils.cleanDirectory(this.outDir);
+        } else
+        	log.info("Output will be to directory {}.", this.outDir);
         // Process the subclass parameters.
         this.validateJsonUpdateParms();
         // Get the ID mapper.
@@ -251,6 +263,12 @@ public abstract class BaseJsonUpdateProcessor extends BaseProcessor {
     	grandParent = new File(this.outDir, masterName);
     	parent = new File(grandParent, clusterName);
     	File retVal = new File(parent, fileName);
+		// Verify that the parent directory exists.
+		try {
+			FileUtils.forceMkdirParent(retVal);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
     	return retVal;
     }
 
