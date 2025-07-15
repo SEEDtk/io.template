@@ -143,7 +143,7 @@ public class TemplateTextProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Verify that the template file exists.
         if (! this.templateFile.canRead())
             throw new FileNotFoundException("Template file " + this.templateFile + " is not found or unreadable.");
@@ -197,7 +197,6 @@ public class TemplateTextProcessor extends BaseProcessor {
         } else
             log.info("Output will be to directory {}.", this.outDir);
         this.tokenCount = 0;
-        return true;
     }
 
     @Override

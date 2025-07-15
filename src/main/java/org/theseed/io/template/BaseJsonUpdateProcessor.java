@@ -121,7 +121,7 @@ public abstract class BaseJsonUpdateProcessor extends BaseProcessor {
 	protected abstract void setJsonUpdateDefaults();
 
 	@Override
-    final protected boolean validateParms() throws IOException, ParseFailureException {
+    final protected void validateParms() throws IOException, ParseFailureException {
         // Verify the genome directory.
         if (! this.genomesDir.isDirectory())
             throw new FileNotFoundException("Input genome master directory " + this.genomesDir + " is not found or invalid.");
@@ -149,7 +149,6 @@ public abstract class BaseJsonUpdateProcessor extends BaseProcessor {
         this.validateJsonUpdateParms();
         // Get the ID mapper.
         this.fidMapper = this.getFidMapper();
-        return true;
     }
 
 	/**
