@@ -44,7 +44,7 @@ public abstract class JsonConverter {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(JsonConverter.class);
+    private static final Logger log = LoggerFactory.getLogger(JsonConverter.class);
     /** feature ID mapper */
     private FidMapper fidMapper;
     /** JSON file name */

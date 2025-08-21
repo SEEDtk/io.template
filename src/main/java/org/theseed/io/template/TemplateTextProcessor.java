@@ -87,7 +87,7 @@ public class TemplateTextProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(TemplateTextProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(TemplateTextProcessor.class);
     /** map of input directories to output files for processing */
     private Map<File, File> inDirMap;
     /** global template file */

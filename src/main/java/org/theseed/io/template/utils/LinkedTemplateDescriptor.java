@@ -35,7 +35,7 @@ public class LinkedTemplateDescriptor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(LinkedTemplateDescriptor.class);
+    private static final Logger log = LoggerFactory.getLogger(LinkedTemplateDescriptor.class);
     /** name of main file key field */
     private String mainFileKey;
     /** map of key values to output lines */

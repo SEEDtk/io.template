@@ -34,7 +34,7 @@ public class TextFactory {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(TextFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(TextFactory.class);
     /** compiled main line template */
     private LineTemplate template;
     /** list of linked-template descriptors */

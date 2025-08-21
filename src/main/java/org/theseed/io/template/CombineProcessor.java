@@ -61,7 +61,7 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 
 	// FIELDS
 	/** logging facility */
-	protected static Logger log = LoggerFactory.getLogger(CombineProcessor.class);
+	private static final Logger log = LoggerFactory.getLogger(CombineProcessor.class);
 	/** ID mapper */
 	private CombinationFidMapper fidMapper;
 	/** genome ID map (source -> target) */

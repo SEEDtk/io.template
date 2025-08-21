@@ -52,7 +52,7 @@ public class PubmedProcessor extends BaseReportProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(PubmedProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(PubmedProcessor.class);
     /** map of file base names to field-name lists */
     private Map<String, List<String>> fieldMap;
     /** list of input directory names */

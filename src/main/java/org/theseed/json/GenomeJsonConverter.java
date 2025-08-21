@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.theseed.magic.FidMapper;
 
 import com.github.cliftonlabs.json_simple.JsonException;
@@ -20,6 +22,10 @@ import com.github.cliftonlabs.json_simple.JsonObject;
  *
  */
 public class GenomeJsonConverter extends JsonConverter {
+
+    // FIELDS
+    /** logging facility */
+    private static final Logger log = LoggerFactory.getLogger(GenomeJsonConverter.class);
 
     /**
      * This enum defines the keys used and their default values.

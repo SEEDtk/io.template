@@ -55,7 +55,7 @@ public abstract class BaseJsonUpdateProcessor extends BaseProcessor {
 
     // FIELDS
     /** logging facility */
-    protected static Logger log = LoggerFactory.getLogger(MagicJsonProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(MagicJsonProcessor.class);
     /** feature ID mapper */
     private FidMapper fidMapper;
     /** list of genome directories to process */
