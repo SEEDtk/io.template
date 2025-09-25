@@ -188,7 +188,7 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 			int sourceIdx = inStream.findField(this.sourceCol);
 			int targetIdx = inStream.findField(this.targetCol);
 			// Read the mappings from the file.
-			this.genomeMap = new HashMap<String, String>();
+			this.genomeMap = new HashMap<>();
 			for (var line : inStream)
 				this.genomeMap.put(line.get(sourceIdx), line.get(targetIdx));
 			log.info("{} genome mappings read from input.", this.genomeMap.size());
@@ -225,12 +225,12 @@ public class CombineProcessor extends BaseJsonUpdateProcessor {
 	protected void convertGenome(FidMapper mapper, File genomeDir, File masterDir) throws IOException, JsonException {
 		// The genome file is special. We don't need to update any IDs, but we need to accumulate the various totals
 		// and counters if we've seen the target genome before. First, we get the input genome's data.
-		File inFile = new File(genomeDir, "genome.json");
-		JsonArray genomeList = JsonConverter.readJson(inFile);
+		File gFile = new File(genomeDir, "genome.json");
+		JsonArray genomeList = JsonConverter.readJson(gFile);
 		// There is always only one record-- the genome itself.
 		JsonObject genomeJson = (JsonObject) genomeList.get(0);
 		// Now we compute the output file.
-		File outFile = this.getOutputFile(inFile);
+		File outFile = this.getOutputFile(gFile);
 		// Get the old genome ID and set up the new genome.
 		String oldGenomeId  = genomeDir.getName();
 		this.fidMapper.setup(oldGenomeId, genomeJson.getStringOrDefault(NAME_KEY));
