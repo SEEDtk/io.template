@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.basic.ParseFailureException;
@@ -40,7 +41,7 @@ public class TextFactory {
     /** list of linked-template descriptors */
     private List<LinkedTemplateDescriptor> linkedTemplates;
     /** current base input directory */
-    private File currentDir;
+    private final File currentDir;
     /** global template output */
     private TemplateHashWriter globals;
 
@@ -131,13 +132,13 @@ public class TextFactory {
     protected void executeTemplates(File source, ITemplateWriter writer)
             throws IOException, ParseFailureException {
         // Initialize the link lists.
-        this.linkedTemplates = new ArrayList<LinkedTemplateDescriptor>();
+        this.linkedTemplates = new ArrayList<>();
         // We start by reading a main template, then all its linked templates.  When we hit end-of-file or a
         // #main marker, we run the main template and output the results.
         try (LineReader templateStream = new LineReader(source)) {
             // We will buffer each template group in here.  A group starts with a #main header and runs through
             // the next #main or end-of-file.
-            List<String> templateGroup = new ArrayList<String>(100);
+            List<String> templateGroup = new ArrayList<>(100);
             // Special handling is required for the first header.
             Iterator<String> streamIter = templateStream.iterator();
             if (! streamIter.hasNext())
@@ -154,12 +155,12 @@ public class TextFactory {
             }
             // Only proceed if there is template data other than the choices.
             if (! savedHeader.isBlank()) {
-                if (! StringUtils.startsWith(savedHeader, "#main"))
+                if (! Strings.CS.startsWith(savedHeader, "#main"))
                     throw new IOException("Template file does not start with #main header.");
                 // Now we have the main header saved, and we can process each template group.
                 // Loop through the template lines.
                 for (var templateLine : templateStream) {
-                    if (StringUtils.startsWith(templateLine, "#main")) {
+                    if (Strings.CS.startsWith(templateLine, "#main")) {
                         // New group starting.  Process the old group.
                         this.processGroup(savedHeader, templateGroup, writer);
                         // Set up for the next group.
@@ -212,7 +213,7 @@ public class TextFactory {
             log.warn("Empty template group skipped.");
         else {
             // We will buffer each template's data lines in here.
-            List<String> templateLines = new ArrayList<String>(templateGroup.size());
+            List<String> templateLines = new ArrayList<>(templateGroup.size());
             Iterator<String> groupIter = templateGroup.iterator();
             // Process the main template.
             String linkHeader = null;
@@ -269,7 +270,7 @@ public class TextFactory {
                 long length = 0;
                 long lastMessage = System.currentTimeMillis();
                 // This list is used to buffer the main template and the linked ones.
-                List<String> translations = new ArrayList<String>(this.linkedTemplates.size() + 1);
+                List<String> translations = new ArrayList<>(this.linkedTemplates.size() + 1);
                 // Read the input file.
                 log.info("Reading input file {}.", mainFile);
                 for (var line : mainStream) {
@@ -299,7 +300,7 @@ public class TextFactory {
                         lastMessage = now;
                     }
                 }
-                if (this.linkedTemplates.size() > 0)
+                if (! this.linkedTemplates.isEmpty())
                     log.info("{} linked lines were incorporated from {} templates.", linked, this.linkedTemplates.size());
                 log.info("{} lines were translated to {} characters of output.", count, length);
             }
@@ -351,24 +352,23 @@ public class TextFactory {
         String linkKey;
         File linkFile;
         switch (tokens.length) {
-        case 2 :
-            throw new ParseFailureException("Template header \"" + savedHeader + "\" has two few parameters.");
-        case 3 :
+        case 2 -> throw new ParseFailureException("Template header \"" + savedHeader + "\" has two few parameters.");
+        case 3 -> {
             // Single key name, so it is the same for both files.
             mainKey = tokens[1];
             linkKey = tokens[1];
             linkFile = new File(this.currentDir, tokens[2]);
-            break;
-        default :
+            }
+        default -> {
             // Two key names, so we use both.
             mainKey = tokens[1];
             linkKey = tokens[2];
             linkFile = new File(this.currentDir, tokens[3]);
-            break;
+            }
         }
         // Create the template and add it to the queue.
-        var template = new LinkedTemplateDescriptor(mainKey, linkKey, templateLines, linkFile, this.globals);
-        this.linkedTemplates.add(template);
+        var template2 = new LinkedTemplateDescriptor(mainKey, linkKey, templateLines, linkFile, this.globals);
+        this.linkedTemplates.add(template2);
     }
 
 }
