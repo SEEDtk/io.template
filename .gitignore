@@ -2,3 +2,4 @@
 /data/*.ser
 /dependency-reduced-pom.xml
 /${env.SEED_JARS}/
+deps.txt
